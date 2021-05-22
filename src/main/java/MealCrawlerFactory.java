@@ -23,12 +23,18 @@ public class MealCrawlerFactory implements CrawlController.WebCrawlerFactory<Foo
         return new FoobyCrawler(this::addToBuffer);
     }
 
-    private void addToBuffer(Meal meal){
-        this.buffer.putIfAbsent(meal.getId(), meal);
-
-        if(this.buffer.size() >= bufferSize){
+    public void flush() {
+        if (!this.buffer.isEmpty()) {
             this.sink.accept(this.buffer.values());
             this.buffer.clear();
+        }
+    }
+
+    private void addToBuffer(Meal meal) {
+        this.buffer.putIfAbsent(meal.getId(), meal);
+
+        if (this.buffer.size() >= bufferSize) {
+            this.flush();
         }
     }
 }

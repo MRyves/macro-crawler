@@ -34,6 +34,7 @@ public class MealCSVWriter implements AutoCloseable, Consumer<Collection<Meal>> 
         csvPrinter.printRecord(
                 "ID",
                 "mealName",
+                "isHealthy",
                 "carbs",
                 "protein",
                 "fat",
@@ -43,10 +44,8 @@ public class MealCSVWriter implements AutoCloseable, Consumer<Collection<Meal>> 
 
     @Override
     public void close() throws Exception {
-        if (this.csvPrinter != null && this.bufferedWriter != null) {
-            this.csvPrinter.close();
-            this.bufferedWriter.close();
-        }
+        this.csvPrinter.close();
+        this.bufferedWriter.close();
     }
 
     @Override
@@ -63,6 +62,7 @@ public class MealCSVWriter implements AutoCloseable, Consumer<Collection<Meal>> 
     private List<String> toMealRecord(Meal meal) {
         return Arrays.asList(meal.getId(),
                 meal.getName(),
+                String.valueOf(meal.isHealthy()),
                 String.valueOf(meal.getCarbs()),
                 String.valueOf(meal.getProtein()),
                 String.valueOf(meal.getFat()),

@@ -13,6 +13,8 @@ public class Meal {
     private Long protein;
     private Long fat;
 
+    private boolean healthy;
+
     public Meal(String id) {
         this.id = id;
     }
@@ -71,5 +73,13 @@ public class Meal {
                 ", fat=" + fat +
                 ", kcal=" + getKcal() +
                 '}';
+    }
+
+    public boolean isHealthy() {
+        return healthy;
+    }
+
+    public void setHealthy(boolean healthy) {
+        this.healthy = healthy;
     }
 }
