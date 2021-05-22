@@ -1,18 +1,19 @@
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import model.Meal;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class MealCrawlerFactory implements CrawlController.WebCrawlerFactory<FoobyCrawler> {
 
 
-    private final Queue<Meal> queue = new ConcurrentLinkedDeque<>();
-    private final Consumer<Meal[]> sink;
+    private final Map<String, Meal> buffer = new ConcurrentHashMap<>();
+    private final Consumer<Collection<Meal>> sink;
     private final int bufferSize;
 
-    public MealCrawlerFactory(Consumer<Meal[]> sink, int bufferSize) {
+    public MealCrawlerFactory(Consumer<Collection<Meal>> sink, int bufferSize) {
         this.bufferSize = bufferSize;
         this.sink = sink;
     }
@@ -23,11 +24,11 @@ public class MealCrawlerFactory implements CrawlController.WebCrawlerFactory<Foo
     }
 
     private void addToBuffer(Meal meal){
-        this.queue.add(meal);
+        this.buffer.putIfAbsent(meal.getId(), meal);
 
-        if(this.queue.size() >= bufferSize){
-            this.sink.accept(queue.toArray(new Meal[0]));
-            this.queue.clear();
+        if(this.buffer.size() >= bufferSize){
+            this.sink.accept(this.buffer.values());
+            this.buffer.clear();
         }
     }
 }

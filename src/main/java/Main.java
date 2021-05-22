@@ -26,7 +26,7 @@ public class Main {
         CrawlConfig config = new CrawlConfig();
 
         config.setCrawlStorageFolder(LOCAL_TEMP_FOLDER + "macro_crawler_temp\\");
-        config.setPolitenessDelay(1000);
+        config.setPolitenessDelay(500);
         config.setMaxDepthOfCrawling(2);
         config.setIncludeBinaryContentInCrawling(false);
         config.setResumableCrawling(false);
@@ -45,7 +45,6 @@ public class Main {
 
 
         try (MealCSVWriter mealCSVWriter = new MealCSVWriter(mealsCsv)) {
-            mealCSVWriter.open();
             mealCSVWriter.writeHeader();
             CrawlController.WebCrawlerFactory<FoobyCrawler> factory = new MealCrawlerFactory(mealCSVWriter, 3);
 

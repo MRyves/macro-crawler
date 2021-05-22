@@ -12,7 +12,6 @@ public class Meal {
     private Long carbs;
     private Long protein;
     private Long fat;
-    private Long kcal;
 
     public Meal(String id) {
         this.id = id;
@@ -55,20 +54,22 @@ public class Meal {
     }
 
     public Long getKcal() {
-        return kcal;
+        long carbKcal = this.carbs == null ? 0 : this.carbs * 4;
+        long fatKcal = this.fat == null ? 0 : this.fat * 9;
+        long proteinKcal = this.protein == null ? 0 : this.protein * 4;
+        return carbKcal + fatKcal + proteinKcal;
     }
 
-    public void setKcal(Long kcal) {
-        this.kcal = kcal;
-    }
 
     @Override
     public String toString() {
-        return id + "," +
-                name + "," +
-                carbs + "," +
-                protein + "," +
-                fat + "," +
-                kcal;
+        return "Meal{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", carbs=" + carbs +
+                ", protein=" + protein +
+                ", fat=" + fat +
+                ", kcal=" + getKcal() +
+                '}';
     }
 }
