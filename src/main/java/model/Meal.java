@@ -1,5 +1,8 @@
 package model;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -72,6 +75,7 @@ public class Meal {
                 ", protein=" + protein +
                 ", fat=" + fat +
                 ", kcal=" + getKcal() +
+                ", isHealthy=" + healthy +
                 '}';
     }
 
@@ -81,5 +85,35 @@ public class Meal {
 
     public void setHealthy(boolean healthy) {
         this.healthy = healthy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Meal meal = (Meal) o;
+
+        return new EqualsBuilder()
+                .append(healthy, meal.healthy)
+                .append(id, meal.id)
+                .append(name, meal.name)
+                .append(carbs, meal.carbs)
+                .append(protein, meal.protein)
+                .append(fat, meal.fat)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(id)
+                .append(name)
+                .append(carbs)
+                .append(protein)
+                .append(fat)
+                .append(healthy)
+                .toHashCode();
     }
 }

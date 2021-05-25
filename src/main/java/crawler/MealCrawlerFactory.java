@@ -1,3 +1,6 @@
+package crawler;
+
+import crawler.FoobyCrawler;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import model.Meal;
 
