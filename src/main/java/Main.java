@@ -1,3 +1,4 @@
+import crawler.FoobyController;
 import crawler.MealCrawlerFactory;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
@@ -23,33 +24,15 @@ public class Main {
     private static final String LOCAL_TEMP_FOLDER = "C:\\temp\\";
 
     public static void main(String[] args) throws Exception {
-        CrawlConfig config = new CrawlConfig();
-
-        config.setCrawlStorageFolder(LOCAL_TEMP_FOLDER + "macro_crawler_temp\\");
-        config.setPolitenessDelay(500);
-        config.setMaxDepthOfCrawling(10);
-        config.setIncludeBinaryContentInCrawling(false);
-        config.setResumableCrawling(false);
-        config.setMaxPagesToFetch(1000);
-
-        // Instantiate the controller for this crawl.
-        PageFetcher pageFetcher = new PageFetcher(config);
-        RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
-        RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
-        CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer);
-
-        controller.addSeed("https://fooby.ch/en.html");
-
-
         Path mealsCsv = Path.of(LOCAL_TEMP_FOLDER, "meals.csv");
-
 
         try (MealCSVWriter mealCSVWriter = new MealCSVWriter(mealsCsv)) {
             mealCSVWriter.writeHeader();
 
             // fooby scraping:
+            CrawlController foobyCrawlController = FoobyController.defaultController(LOCAL_TEMP_FOLDER);
             MealCrawlerFactory factory = new MealCrawlerFactory(mealCSVWriter, 100);
-            controller.start(factory, 2);
+            foobyCrawlController.start(factory, 2);
             factory.flush();
 
             // tasty api access:

@@ -3,18 +3,14 @@ package model;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 public class Meal {
 
     private final String id;
     private String name;
 
-    private Long carbs;
-    private Long protein;
-    private Long fat;
+    private long carbs;
+    private long protein;
+    private long fat;
 
     private boolean healthy;
 
@@ -34,34 +30,34 @@ public class Meal {
         this.name = name;
     }
 
-    public Long getCarbs() {
+    public long getCarbs() {
         return carbs;
     }
 
-    public void setCarbs(Long carbs) {
+    public void setCarbs(long carbs) {
         this.carbs = carbs;
     }
 
-    public Long getProtein() {
+    public long getProtein() {
         return protein;
     }
 
-    public void setProtein(Long protein) {
+    public void setProtein(long protein) {
         this.protein = protein;
     }
 
-    public Long getFat() {
+    public long getFat() {
         return fat;
     }
 
-    public void setFat(Long fat) {
+    public void setFat(long fat) {
         this.fat = fat;
     }
 
     public Long getKcal() {
-        long carbKcal = this.carbs == null ? 0 : this.carbs * 4;
-        long fatKcal = this.fat == null ? 0 : this.fat * 9;
-        long proteinKcal = this.protein == null ? 0 : this.protein * 4;
+        long carbKcal = this.carbs * 4;
+        long fatKcal = this.fat * 9;
+        long proteinKcal = this.protein * 4;
         return carbKcal + fatKcal + proteinKcal;
     }
 
@@ -95,25 +91,11 @@ public class Meal {
 
         Meal meal = (Meal) o;
 
-        return new EqualsBuilder()
-                .append(healthy, meal.healthy)
-                .append(id, meal.id)
-                .append(name, meal.name)
-                .append(carbs, meal.carbs)
-                .append(protein, meal.protein)
-                .append(fat, meal.fat)
-                .isEquals();
+        return new EqualsBuilder().append(id, meal.id).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(id)
-                .append(name)
-                .append(carbs)
-                .append(protein)
-                .append(fat)
-                .append(healthy)
-                .toHashCode();
+        return new HashCodeBuilder(17, 37).append(id).toHashCode();
     }
 }

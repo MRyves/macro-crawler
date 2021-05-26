@@ -23,28 +23,33 @@ import java.util.function.Consumer;
 public class TastyMealFetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TastyMealFetcher.class);
-
-    private static final int PAGE_SIZE = 100;
-
+    private static final int PAGE_SIZE = 200;
     private static final String BASE_API_URL = "https://tasty.p.rapidapi.com/recipes/list";
 
     private final JsonFactory jFactory = new JsonFactory();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RoaringBitmap fetchedMeals = new RoaringBitmap();
 
     private final Consumer<Collection<Meal>> mealConsumer;
 
-    private final RoaringBitmap fetchedMeals;
-
     public TastyMealFetcher(Consumer<Collection<Meal>> mealConsumer) {
         this.mealConsumer = mealConsumer;
-        this.fetchedMeals = new RoaringBitmap();
     }
 
     public void consume(int pages, boolean onlyHealthyRecipes) throws IOException, URISyntaxException {
-        for (int i = 0; i < pages; i++) {
-            URI uri = this.buildUri(i, onlyHealthyRecipes);
-            HttpUriRequest request = this.createRequest(uri);
+        for (int currentPageCount = 0; currentPageCount < pages; currentPageCount++) {
+            HttpUriRequest request = this.buildRequest(currentPageCount, onlyHealthyRecipes);
+            LOGGER.info("Consuming result of {} api call", request);
             this.mealConsumer.accept(this.fetchResults(request).values());
         }
+    }
+
+    private HttpGet buildRequest(int currentPageCount, boolean onlyHealthyRecipes) throws URISyntaxException {
+        URI uri = this.buildUri(currentPageCount, onlyHealthyRecipes);
+        HttpGet request = new HttpGet(uri);
+        request.addHeader("x-rapidapi-host", "tasty.p.rapidapi.com");
+        request.addHeader("x-rapidapi-key", "de3f729651mshe52fa21f8e7b725p1eb7bejsn521b8762fdf8");
+        return request;
     }
 
     private URI buildUri(int pageCount, boolean onlyHealthyRecipes) throws URISyntaxException {
@@ -58,20 +63,13 @@ public class TastyMealFetcher {
         return builder.build();
     }
 
-    private HttpGet createRequest(URI uri) {
-        HttpGet request = new HttpGet(uri);
-        request.addHeader("x-rapidapi-host", "tasty.p.rapidapi.com");
-        request.addHeader("x-rapidapi-key", "de3f729651mshe52fa21f8e7b725p1eb7bejsn521b8762fdf8");
-        return request;
-    }
-
     private Map<String, Meal> fetchResults(HttpUriRequest request) throws IOException {
         try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault();
              CloseableHttpResponse execute = closeableHttpClient.execute(request);
              JsonParser jParser = this.jFactory.createParser(new BufferedInputStream(execute.getEntity().getContent()))) {
             while (jParser.nextToken() != JsonToken.END_OBJECT) {
                 if ("results".equals(jParser.getCurrentName())) {
-                    LOGGER.info("Results found. Starting to parse meals");
+                    LOGGER.info("Results found. Starting to parse meals...");
                     this.moveToStartOfObject(jParser);
                     return this.parseResults(jParser);
                 }
@@ -87,10 +85,7 @@ public class TastyMealFetcher {
     }
 
     private Map<String, Meal> parseResults(JsonParser jParser) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-
         Map<String, Meal> meals = new HashMap<>();
-
         while (jParser.nextToken() != JsonToken.END_ARRAY) {
             ObjectNode recipeNode = objectMapper.readTree(jParser);
             Meal meal = this.parseResult(recipeNode);
@@ -105,26 +100,25 @@ public class TastyMealFetcher {
     }
 
     private Meal parseResult(ObjectNode recipeNode) {
-        if (!recipeNode.isObject()) return null;
-
-        ValueNode name = (ValueNode) recipeNode.path("name");
-        ValueNode carbNode = (ValueNode) recipeNode.path("nutrition").path("carbohydrates");
-        ValueNode fatNode = (ValueNode) recipeNode.path("nutrition").path("fat");
-        ValueNode proteinNode = (ValueNode) recipeNode.path("nutrition").path("protein");
+        JsonNode name = recipeNode.path("name");
+        JsonNode carbNode = recipeNode.path("nutrition").path("carbohydrates");
+        JsonNode fatNode = recipeNode.path("nutrition").path("fat");
+        JsonNode proteinNode = recipeNode.path("nutrition").path("protein");
 
         Meal returningMeal = null;
 
-        if (!name.isMissingNode() &&
+        if (!recipeNode.isObject() &&
+                !name.isMissingNode() &&
                 !carbNode.isMissingNode() &&
                 !fatNode.isMissingNode() &&
                 !proteinNode.isMissingNode()) {
-                    returningMeal = new Meal("Tasty" + name.hashCode());
-                    returningMeal.setName(name.asText());
-                    returningMeal.setCarbs(carbNode.asLong());
-                    returningMeal.setFat(fatNode.asLong());
-                    returningMeal.setProtein(proteinNode.asLong());
-                    returningMeal.setHealthy(this.hasHealthyTag(recipeNode));
-                }
+            returningMeal = new Meal("Tasty" + name.hashCode());
+            returningMeal.setName(name.asText());
+            returningMeal.setCarbs(carbNode.asLong());
+            returningMeal.setFat(fatNode.asLong());
+            returningMeal.setProtein(proteinNode.asLong());
+            returningMeal.setHealthy(this.hasHealthyTag(recipeNode));
+        }
         return returningMeal;
     }
 

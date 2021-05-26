@@ -12,15 +12,20 @@ public class FoobyMealFactory {
     private static final Pattern MACRO_PATTERN = Pattern.compile("^(?<number>\\d+).*$");
     private static final Pattern HAS_HEALTHY_TAG_PATTERN = Pattern.compile(".*(, healthy and balanced).*");
 
+    // css selectors:
+    public static final String FAT_SELECTOR = "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(5)";
+    public static final String NAME_SELECTOR = "#page-header-recipe__panel-detail > h1";
+    public static final String CARB_SELECTOR = "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(8)";
+    public static final String PROTEIN_SELECTOR = "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(11)";
+
     public static Meal fromHtml(String id, String html) {
         Meal meal = new Meal(id);
         Document doc = Jsoup.parse(html);
-        meal.setName(parseString(doc, "#page-header-recipe__panel-detail > h1"));
+        meal.setName(parseString(doc, NAME_SELECTOR));
 
-        Long carbs = parseMacro(doc, "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(8)");
-        Long protein = parseMacro(doc, "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(11)");
-        Long fat = parseMacro(doc, "#page-header-recipe__panel-detail > div.page-header-recipe__meta-container > div.meta-info.meta-info--big.meta-info--visible-breaks > span:nth-child(5)");
-
+        long carbs = parseMacro(doc, CARB_SELECTOR);
+        long protein = parseMacro(doc, PROTEIN_SELECTOR);
+        long fat = parseMacro(doc, FAT_SELECTOR);
         boolean healthy = isMealHealthy(doc);
 
         meal.setCarbs(carbs);
@@ -45,19 +50,19 @@ public class FoobyMealFactory {
         return "N / A";
     }
 
-    private static Long parseMacro(Document doc, String cssSelector) {
+    private static long parseMacro(Document doc, String cssSelector) {
         Element element = doc.selectFirst(cssSelector);
 
         if (element == null || !element.hasText()) {
-            return null;
+            return 0;
         }
 
         Matcher matcher = MACRO_PATTERN.matcher(element.text());
         if (matcher.find()) {
-            return Long.valueOf(matcher.group("number"));
+            return Long.parseLong(matcher.group("number"));
         }
 
-        return null;
+        return 0;
     }
 
 }

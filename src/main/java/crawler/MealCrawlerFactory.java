@@ -1,6 +1,5 @@
 package crawler;
 
-import crawler.FoobyCrawler;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import model.Meal;
 
@@ -10,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class MealCrawlerFactory implements CrawlController.WebCrawlerFactory<FoobyCrawler> {
-
 
     private final Map<String, Meal> buffer = new ConcurrentHashMap<>();
     private final Consumer<Collection<Meal>> sink;
