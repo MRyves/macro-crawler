@@ -40,7 +40,12 @@ public class TastyMealFetcher {
         for (int currentPageCount = 0; currentPageCount < pages; currentPageCount++) {
             HttpUriRequest request = this.buildRequest(currentPageCount, onlyHealthyRecipes);
             LOGGER.info("Consuming result of {} api call", request);
-            this.mealConsumer.accept(this.fetchResults(request).values());
+            Collection<Meal> parsedResults = this.fetchResults(request);
+            this.mealConsumer.accept(parsedResults);
+            if (parsedResults.isEmpty()) {
+                LOGGER.warn("Last api call resulted in zero meals, exiting fetching...");
+                break;
+            }
         }
     }
 
@@ -63,40 +68,50 @@ public class TastyMealFetcher {
         return builder.build();
     }
 
-    private Map<String, Meal> fetchResults(HttpUriRequest request) throws IOException {
+    private Collection<Meal> fetchResults(HttpUriRequest request) throws IOException {
         try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault();
              CloseableHttpResponse execute = closeableHttpClient.execute(request);
              JsonParser jParser = this.jFactory.createParser(new BufferedInputStream(execute.getEntity().getContent()))) {
             while (jParser.nextToken() != JsonToken.END_OBJECT) {
                 if ("results".equals(jParser.getCurrentName())) {
                     LOGGER.info("Results found. Starting to parse meals...");
-                    this.moveToStartOfObject(jParser);
+                    this.skipTokens(jParser, 2);
                     return this.parseResults(jParser);
                 }
             }
         }
-        return Collections.emptyMap();
+        return Collections.emptyList();
     }
 
-    private void moveToStartOfObject(JsonParser jParser) throws IOException {
-        while (jParser.nextToken() != JsonToken.START_OBJECT) {
-            // do nothing
+    private void skipTokens(JsonParser jParser, int tokenCount) throws IOException {
+        for (int i = 0; i < tokenCount; i++) {
+            jParser.nextToken();
         }
     }
 
-    private Map<String, Meal> parseResults(JsonParser jParser) throws IOException {
-        Map<String, Meal> meals = new HashMap<>();
-        while (jParser.nextToken() != JsonToken.END_ARRAY) {
-            ObjectNode recipeNode = objectMapper.readTree(jParser);
-            Meal meal = this.parseResult(recipeNode);
-            if (meal != null && !this.fetchedMeals.contains(meal.hashCode())) {
-                meals.put(meal.getId(), meal);
-                this.fetchedMeals.add(meal.hashCode());
+    private Collection<Meal> parseResults(JsonParser jParser) throws IOException {
+        Collection<Meal> meals = new ArrayList<>();
+        while (true) {
+            JsonNode recipeNode = objectMapper.readTree(jParser);
+            if (recipeNode == null || !recipeNode.isObject()) break;
+
+            Meal meal = this.parseResult((ObjectNode) recipeNode);
+            if (meal != null) {
+                ingestMeal(meals, meal);
             }
         }
 
         LOGGER.info("Finished parsing results. Parsed a total of {} meals", meals.size());
         return meals;
+    }
+
+    private void ingestMeal(Collection<Meal> meals, Meal meal) {
+        if (!this.fetchedMeals.contains(meal.hashCode())) {
+            meals.add(meal);
+            this.fetchedMeals.add(meal.hashCode());
+        } else {
+            LOGGER.warn("Parsed already persisted meal: {}", meal);
+        }
     }
 
     private Meal parseResult(ObjectNode recipeNode) {
@@ -107,8 +122,7 @@ public class TastyMealFetcher {
 
         Meal returningMeal = null;
 
-        if (!recipeNode.isObject() &&
-                !name.isMissingNode() &&
+        if (!name.isMissingNode() &&
                 !carbNode.isMissingNode() &&
                 !fatNode.isMissingNode() &&
                 !proteinNode.isMissingNode()) {
@@ -118,6 +132,8 @@ public class TastyMealFetcher {
             returningMeal.setFat(fatNode.asLong());
             returningMeal.setProtein(proteinNode.asLong());
             returningMeal.setHealthy(this.hasHealthyTag(recipeNode));
+        } else {
+            LOGGER.debug("Unable to parse meal with nodes: name={}, carb={}, fat={}, protein={}", name, carbNode, fatNode, proteinNode);
         }
         return returningMeal;
     }

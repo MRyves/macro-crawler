@@ -27,8 +27,8 @@ public class Main {
 
             // tasty api access:
             TastyMealFetcher tastyMealFetcher = new TastyMealFetcher(mealCSVWriter);
-            tastyMealFetcher.consume(5, true);
-            tastyMealFetcher.consume(10, false);
+            tastyMealFetcher.consume(50, true);
+            tastyMealFetcher.consume(50, false);
         } catch (IOException e) {
             LOGGER.error("Error during opening csv file", e);
         }
